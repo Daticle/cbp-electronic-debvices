@@ -1,1 +1,1 @@
-# cbp-electronic-debvices
+# \<daticle-cbp-devices\>

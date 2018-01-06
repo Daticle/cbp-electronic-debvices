@@ -1,0 +1,242 @@
+<dom-module id="daticle-cbp-devices-chart">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      svg {
+        display: block;
+        margin: 0 auto;
+      }
+
+      .axis--x path {
+        display: none;
+      }
+
+      .line {
+        fill: none;
+        stroke: steelblue;
+        stroke-width: 1.5px;
+      }
+
+      #container {
+        margin: 50px auto 0;
+        position: relative;
+      }
+
+      #hoverPanel {
+        position: absolute;
+        background: white;
+        padding: 8px;
+        border: 1px solid #d8d8d8;
+        border-radius: 3px;
+        font-size: 11px;
+        font-family: sans-serif;
+        font-weight: 400;
+        background: #f0f0fa;
+        pointer-events: none;
+      }
+
+      #legend {
+        position: absolute;
+        bottom: 50px;
+        right: 20px;
+        font-family: sans-serif;
+        font-size: 12px;
+        color: #000;
+      }
+
+      .row span {
+        vertical-align: middle;
+        display: inline-block;
+      }
+
+      .sq {
+        display: inline-block;
+        vertical-align: middle;
+        width: 12px;
+        height: 12px;
+      }
+
+      .sq1 {
+        background: rgb(31, 119, 180);
+      }
+
+      .sq2 {
+        background: rgb(255, 127, 14);
+      }
+    </style>
+    <div id="container">
+      <svg id="svg"></svg>
+      <div id="legend">
+        <div class="row">
+          <div class="sq sq1"></div>
+          <span>FY 2016</span>
+        </div>
+        <div class="row">
+          <div class="sq sq2"></div>
+          <span>FY 2017</span>
+        </div>
+      </div>
+      <div id="hoverPanel" style="display: none;">[[message]]</div>
+    </div>
+  </template>
+  <script src="d3.v4.min.js"></script>
+  <script>
+    class DCBPDevicesChart extends Polymer.Element {
+      static get is() { return 'daticle-cbp-devices-chart'; }
+      static get properties() {
+        return {
+          message: String
+        };
+      }
+
+      constructor() {
+        super();
+        this._resizeListener = this._onResize.bind(this);
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        this.svg = this.$.svg;
+        setTimeout(() => {
+          this._refresh();
+        });
+        window.removeEventListener("resize", this._resizeListener);
+        window.addEventListener("resize", this._resizeListener);
+      }
+
+      disconnectedCallback() {
+        super.disconnectedCallback();
+        window.removeEventListener("resize", this._resizeListener);
+      }
+
+      _onResize() {
+        if (this._resizing) {
+          return;
+        }
+        this._resizing = true;
+        setTimeout(() => {
+          this._resizing = false;
+          this._refresh();
+        }, 800);
+      }
+
+      _clearNode(node) {
+        while (node.hasChildNodes()) {
+          node.removeChild(node.lastChild);
+        }
+      }
+
+      _refresh() {
+        this._clearNode(this.svg);
+        this._w = Math.min(window.innerWidth, 960);
+        this._h = Math.max(300, this._w * 0.521);
+        this.$.container.style.width = this._w + "px";
+        var svg = d3.select(this.svg);
+        svg.attr("width", this._w).attr("height", this._h);
+        var margin = { top: 20, right: 20, bottom: this._w > 500 ? 30 : 50, left: 40 },
+          width = this._w - margin.left - margin.right,
+          height = this._h - margin.top - margin.bottom,
+          g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        var parseTime = d3.timeParse("%B-%Y");
+        var x = d3.scaleTime().range([0, width]),
+          y = d3.scaleLinear().range([height, 0]),
+          z = d3.scaleOrdinal(d3.schemeCategory10);
+        var line = d3.line()
+          .x(function (d) { return x(d.date); })
+          .y(function (d) { return y(d.count); });
+
+        let dataCallback = (error, data) => {
+          this._csvData = data;
+          var allValues = [];
+          var years = data.columns.slice(1).map(function (id) {
+            return {
+              id: id,
+              values: data.map(function (d) {
+                let di = { date: d.date, count: d[id], id: id };
+                allValues.push(di);
+                return di;
+              })
+            };
+          });
+
+          x.domain(d3.extent(data, function (d) { return d.date; }));
+          y.domain([0, d3.max(years, function (c) { return d3.max(c.values, function (d) { return d.count; }); })]);
+          z.domain(years.map(function (c) { return c.id; }));
+
+          let xAxis = g.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%b")));
+          if (this._w <= 500) {
+            xAxis.selectAll("text")
+              .style("text-anchor", "end")
+              .attr("dx", "-.8em")
+              .attr("dy", ".15em")
+              .attr("transform", "rotate(-65)");
+          }
+
+          g.append("g")
+            .attr("class", "axis axis--y")
+            .call(d3.axisLeft(y));
+
+          var year = g.selectAll(".year")
+            .data(years)
+            .enter().append("g")
+            .attr("class", "year");
+
+          year.append("path")
+            .attr("class", "line")
+            .attr("d", function (d) { return line(d.values); })
+            .style("stroke", function (d) { return z(d.id); });
+
+          g.append("g").selectAll("circle").data(allValues).enter()
+            .append("circle")
+            .attr("x", 0).attr("y", 0)
+            .attr("r", 5)
+            .attr("transform", (d) => {
+              return "translate(" + x(d.date) + "," + y(d.count) + ")";
+            }).attr("fill", function (d) { return z(d.id); })
+            .on("mouseover", (d) => {
+              this.message = d.count + " cases";
+              let style = this.$.hoverPanel.style;
+              style.display = "block";
+              let left = x(d.date);
+              if ((left + 168) >= window.innerWidth) {
+                left = window.innerWidth - 171;
+              }
+              style.left = left + "px";
+              style.top = y(d.count) - 25 + "px";
+            })
+            .on("click", (d) => {
+              this.message = d.count + " cases";
+              let style = this.$.hoverPanel.style;
+              style.display = "block";
+              let left = x(d.date);
+              if ((left + 168) >= window.innerWidth) {
+                left = window.innerWidth - 171;
+              }
+              style.left = left + "px";
+              style.top = y(d.count) - 25 + "px";
+            })
+            .on("mouseout", () => {
+              this.$.hoverPanel.style.display = "none";
+            });
+        };
+
+        if (this._csvData) {
+          dataCallback(null, this._csvData);
+        } else {
+          d3.csv(this.resolveUrl('data.csv'), (d, _, columns) => {
+            d.date = parseTime(d.date);
+            for (var i = 1, n = columns.length, c; i < n; ++i) d[c = columns[i]] = +d[c];
+            return d;
+          }, dataCallback);
+        }
+      }
+    }
+    window.customElements.define(DCBPDevicesChart.is, DCBPDevicesChart);
+  </script>
+</dom-module>

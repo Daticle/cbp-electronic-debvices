@@ -1,0 +1,160 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="daticle-cbp-devices-chart.html">
+
+<dom-module id="daticle-cbp-devices">
+  <template>
+    <style>
+      :host {
+        display: block;
+        font-family: 'Open Sans', sans-serif;
+        font-weight: 400;
+        line-height: 1.5;
+        font-size: 18px;
+        color: #292929;
+        -webkit-font-smoothing: antialiased;
+        padding: 20px 0;
+      }
+
+      header,
+      section {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 0 12px;
+      }
+
+      figure {
+        margin: 20px 0 50px;
+      }
+
+      figcaption {
+        max-width: 650px;
+        margin: 0 auto;
+        font-size: 14px;
+        text-align: center;
+        padding: 10px 15px;
+      }
+
+      h1 {
+        font-family: 'Raleway', sans-serif;
+        margin: 0;
+        font-weight: 400;
+        line-height: 1.4;
+        font-size: 36px;
+        text-transform: capitalize;
+      }
+
+      a,
+      a:visited,
+      a:hover {
+        color: #2E7D32;
+        outline: none;
+        text-decoration: none;
+      }
+
+      a:hover {
+        box-shadow: 0 1px 0px 0;
+      }
+    </style>
+    <article>
+      <header>
+        <h1>Searches of international travelers' electronic devices up by nearly 60 percent</h1>
+      </header>
+      <section>
+        <p>U.S. Customs and Border Protection (CBP) officers searched 30,200 electronic devices (cellphones, laptops, tablets)
+          in the 2017 fiscal year - up from 19,051 devices in 2016.</p>
+      </section>
+      <figure>
+        <daticle-cbp-devices-chart></daticle-cbp-devices-chart>
+        <figcaption>Number of international travelers (inbound and outbound) processed with electronic device search in the fiscal years
+          of 2016 and 2017. Source:
+          <a target="_blank" href="https://www.cbp.gov/newsroom/national-media-release/cbp-releases-updated-border-search-electronic-device-directive-and">U.S. Customs and Border Protection.</a>
+        </figcaption>
+      </figure>
+      <section>
+        <p>
+          Both years saw similar number of total international travellers (about 390 million). The number of searches has gone up over
+          the past few years because more people carry devices when traveling and CBP has trained more officers in the search
+          process.
+        </p>
+      </section>
+      <section>
+        <p>
+          About 80 percent of these searches were of devices carried by non-U.S. citizens.
+        </p>
+        <p>
+          U.S. citizens can refuse to unlock their devices - they will be allowed to enter the U.S., but their devices could be held
+          back for a few days.
+        </p>
+        <p>Non-citizens may be denied entry if they refuse to open their device.</p>
+      </section>
+    </article>
+  </template>
+
+  <script>
+    class DaticleCbpDevices extends Polymer.Element {
+      static get is() { return 'daticle-cbp-devices'; }
+      static get properties() {
+        return {
+          prop1: {
+            type: String,
+            value: 'daticle-cbp-devices'
+          }
+        };
+      }
+    }
+
+    window.customElements.define(DaticleCbpDevices.is, DaticleCbpDevices);
+  </script>
+</dom-module>
+
+<dom-module id="daticle-cbp-devices-composer">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+  </template>
+  <script>
+    class DCPBDevicesComposer extends Polymer.Element {
+      static get is() { return 'daticle-cbp-devices-composer'; }
+      static get properties() {
+        return {
+        };
+      }
+
+      get summary() {
+        return {
+          title: "Searches of international travelers' electronic devices up by nearly 60 percent",
+          text: "U.S. Customs and Border Protection (CBP) officers searched 30,200 electronic devices (cellphones, laptops, tablets) in the 2017 fiscal year - up from 19,051 devices in 2016."
+        };
+      }
+
+      get sharedState() {
+        return {
+          properties: {},
+          collections: {}
+        }
+      }
+
+      get searchText() {
+        return "Searches of international travelers' electronic devices up by nearly 60 percent" +
+          " U.S. Customs and Border Protection (CBP) officers searched 30,200 electronic devices (cellphones, laptops, tablets) in the 2017 fiscal year - up from 19,051 devices in 2016." +
+          ' Both years saw similar number of total international travellers (about 390 million). The number of searches has gone up over the past few years because more people carry devices when traveling and CBP has trained more officers in the search process.' +
+          " About 80 percent of these searches were of devices carried by non-U.S. citizens." +
+          " U.S. citizens can refuse to unlock their devices - they will be allowed to enter the U.S., but their devices could be held back for a few days." +
+          " Non-citizens may be denied entry if they refuse to open their device.";
+      }
+
+      get isReady() {
+        return true;
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        this.dispatchEvent(new CustomEvent('shared-state-change', { bubbles: true, composed: true }));
+      }
+    }
+    window.customElements.define(DCPBDevicesComposer.is, DCPBDevicesComposer);
+  </script>
+</dom-module>
